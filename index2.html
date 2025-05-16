@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Гра: Дракончик</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-color: #ccc;
+      overflow: hidden;
+    }
+    #game {
+      width: 100%;
+      height: 100vh;
+      background-color: #999;
+      position: relative;
+    }
+    #dragon {
+      width: 50px;
+      height: 50px;
+      background-color: green;
+      background-image: url('https://upload.wikimedia.org/wikipedia/commons/1/18/Flying_dragon_emoji.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      position: absolute;
+      bottom: 50px;
+      left: 50px;
+    }
+    .obstacle {
+      width: 30px;
+      height: 50px;
+      background-color: brown;
+      position: absolute;
+      bottom: 50px;
+      right: 0;
+    }
+    #score {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #000;
+    }
+    #jumpButton {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      padding: 20px;
+      background-color: #222;
+      color: #fff;
+      font-size: 20px;
+      border: none;
+      border-radius: 10px;
+      opacity: 0.8;
+      z-index: 10;
+    }
+    @media (max-width: 768px) {
+      #jumpButton {
+        padding: 16px;
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="game">
+    <div id="score">Очки: 0</div>
+    <div id="dragon"></div>
+    <button id="jumpButton">Стрибок</button>
+  </div>
+
+  <script>
+    const dragon = document.getElementById("dragon");
+    const game = document.getElementById("game");
+    const scoreDisplay = document.getElementById("score");
+    const jumpButton = document.getElementById("jumpButton");
+    let isJumping = false;
+    let gameSpeed = 5;
+    let score = 0;
+
+    const jumpSound = new Audio('https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg');
+    const gameOverSound = new Audio('https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg');
+
+    function jump() {
+      if (isJumping) return;
+      isJumping = true;
+      jumpSound.play();
+      let upInterval = setInterval(() => {
+        let bottom = parseInt(getComputedStyle(dragon).bottom);
+        if (bottom >= 200) {
+          clearInterval(upInterval);
+          let downInterval = setInterval(() => {
+            bottom = parseInt(getComputedStyle(dragon).bottom);
+            if (bottom <= 50) {
+              clearInterval(downInterval);
+              isJumping = false;
+            } else {
+              dragon.style.bottom = bottom - 5 + "px";
+            }
+          }, 20);
+        } else {
+          dragon.style.bottom = bottom + 5 + "px";
+        }
+      }, 20);
+    }
+
+    function createObstacle() {
+      const obstacle = document.createElement("div");
+      obstacle.classList.add("obstacle");
+      game.appendChild(obstacle);
+      let position = game.offsetWidth;
+      obstacle.style.left = position + "px";
+
+      let moveInterval = setInterval(() => {
+        if (position < -30) {
+          clearInterval(moveInterval);
+          game.removeChild(obstacle);
+          score++;
+          scoreDisplay.textContent = "Очки: " + score;
+        } else {
+          position -= gameSpeed;
+          obstacle.style.left = position + "px";
+
+          const dragonRect = dragon.getBoundingClientRect();
+          const obstacleRect = obstacle.getBoundingClientRect();
+          if (
+            dragonRect.right > obstacleRect.left &&
+            dragonRect.left < obstacleRect.right &&
+            dragonRect.bottom > obstacleRect.top
+          ) {
+            gameOverSound.play();
+            alert("Гру завершено! Твій рахунок: " + score);
+            location.reload();
+          }
+        }
+      }, 20);
+
+      setTimeout(createObstacle, Math.random() * 2000 + 1000);
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.code === "Space") {
+        jump();
+      }
+    });
+
+    jumpButton.addEventListener("click", jump);
+    game.addEventListener("touchstart", jump);
+
+    createObstacle();
+  </script>
+</body>
+</html>
